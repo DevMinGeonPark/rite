@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plan Tournament Record",
+  "description": "Either a candidate plan (kind=plan) or a judge scorecard (kind=score), one JSON object per line in raw-findings.jsonl.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "plan_id", "angle", "summary"],
+      "properties": {
+        "kind": { "const": "plan" },
+        "plan_id": { "type": "string", "description": "e.g. PLAN-A" },
+        "angle": { "type": "string", "description": "e.g. mvp-first, risk-first" },
+        "summary": { "type": "string" },
+        "trade_offs": { "type": "string", "description": "What this plan sacrifices" },
+        "key_risks": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "judge_id", "plan_id", "scores", "total"],
+      "properties": {
+        "kind": { "const": "score" },
+        "judge_id": { "type": "string", "description": "e.g. JUDGE-1" },
+        "plan_id": { "type": "string" },
+        "scores": {
+          "type": "object",
+          "description": "Score (0-5) per rubric criterion",
+          "additionalProperties": { "type": "number", "minimum": 0, "maximum": 5 },
+          "properties": {
+            "feasibility": { "type": "number", "minimum": 0, "maximum": 5 },
+            "impact": { "type": "number", "minimum": 0, "maximum": 5 },
+            "risk": { "type": "number", "minimum": 0, "maximum": 5 },
+            "simplicity": { "type": "number", "minimum": 0, "maximum": 5 }
+          }
+        },
+        "total": { "type": "number" },
+        "rationale": { "type": "string" }
+      }
+    }
+  ]
+}

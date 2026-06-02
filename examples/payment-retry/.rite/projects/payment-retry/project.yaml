@@ -1,0 +1,56 @@
+id: payment-retry
+title: Payment Retry
+created_at: 2026-06-01T00:00:00Z
+status: implementation
+
+mode: standard
+risk_level: medium_high
+project_type: feature
+
+summary: >
+  Add automatic retry for failed payments with audit logging.
+
+team:
+  core:
+    - manager
+    - product_analyst
+    - architect
+    - tech_lead
+    - builder
+    - verifier
+    - scribe
+  specialists:
+    - payment-domain-specialist
+    - idempotency-adversary
+    - queue-reliability-reviewer
+
+required_artifacts:
+  - brief.md
+  - prd.md
+  - spec.md
+  - architecture.md
+  - tasks.yaml
+  - test-plan.md
+  - risk-register.md
+  - evidence/
+
+current_phase: implementation
+current_task: task-002-retry-queue
+
+gates:
+  planning:
+    - brief_exists
+    - acceptance_criteria_testable
+    - non_goals_defined
+  design:
+    - architecture_exists
+    - risks_documented
+    - adr_created_if_needed
+  implementation:
+    - task_assigned
+    - tests_added_or_waived
+    - diff_budget_checked
+  review:
+    - evidence_exists
+    - verifier_approved
+    - acceptance_criteria_mapped

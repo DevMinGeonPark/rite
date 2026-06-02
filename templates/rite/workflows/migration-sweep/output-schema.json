@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Migration Sweep Shard Result",
+  "description": "One JSON object per shard in raw-findings.jsonl, reporting how the transformation was applied.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["shard_id", "files", "transformed", "skipped", "failed", "compiles", "tests"],
+  "properties": {
+    "shard_id": { "type": "string", "description": "e.g. SHARD-03" },
+    "files": { "type": "array", "items": { "type": "string" }, "description": "Files in this shard" },
+    "transformed": {
+      "type": "array",
+      "description": "Occurrences successfully transformed",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "line"],
+        "properties": {
+          "file": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "skipped": {
+      "type": "array",
+      "description": "Occurrences intentionally NOT transformed, each with a reason",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "line", "reason"],
+        "properties": {
+          "file": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "failed": {
+      "type": "array",
+      "description": "Occurrences that could not be transformed",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "line", "error"],
+        "properties": {
+          "file": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "error": { "type": "string" }
+        }
+      }
+    },
+    "compiles": { "type": "boolean" },
+    "tests": { "type": "string", "enum": ["pass", "fail", "not_run"] },
+    "notes": { "type": "string" }
+  }
+}

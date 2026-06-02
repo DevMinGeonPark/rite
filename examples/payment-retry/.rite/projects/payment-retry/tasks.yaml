@@ -1,0 +1,40 @@
+project: payment-retry
+
+tasks:
+  - id: task-001-retry-policy
+    title: Add retry policy model
+    story: story-001-retry-policy
+    status: done
+    owner: builder
+    reviewer: verifier
+    depends_on: []
+    files_expected:
+      - src/payment/retryPolicy.ts
+      - src/payment/retryPolicy.test.ts
+    acceptance:
+      - timeout is retryable
+      - hard decline is not retryable
+      - max retry count is enforced
+    required_evidence:
+      - unit_test_output
+      - typecheck_output
+      - acceptance_mapping
+
+  - id: task-002-retry-queue
+    title: Add retry queue job
+    story: story-002-retry-queue
+    status: ready
+    owner: builder
+    reviewer: verifier
+    depends_on:
+      - task-001-retry-policy
+    files_expected:
+      - src/payment/retryQueue.ts
+      - src/payment/retryQueue.test.ts
+    acceptance:
+      - retry job is idempotent
+      - duplicate webhook does not create duplicate charge
+      - retry count is persisted
+    required_evidence:
+      - integration_test_output
+      - idempotency_review

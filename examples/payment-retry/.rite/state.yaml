@@ -1,0 +1,19 @@
+current_project: payment-retry
+current_phase: implementation
+current_task: task-002-retry-queue
+last_updated: 2026-06-02T00:00:00Z
+
+active_projects:
+  - payment-retry
+
+recent_runs:
+  - at: 2026-06-01T12:00:00Z
+    task: task-001-retry-policy
+    by: builder
+    result: review
+  - at: 2026-06-01T15:00:00Z
+    task: task-001-retry-policy
+    by: verifier
+    result: approved
+
+global_blockers: []

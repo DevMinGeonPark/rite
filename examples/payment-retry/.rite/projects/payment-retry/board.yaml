@@ -1,0 +1,46 @@
+project: payment-retry
+phase: implementation
+
+lanes:
+  backlog:
+    - story-003-audit-log
+
+  ready:
+    - task-002-retry-queue
+
+  in_progress: []
+
+  review: []
+
+  qa: []
+
+  done:
+    - task-001-retry-policy
+
+owners:
+  task-001-retry-policy:
+    primary: builder
+    reviewer: verifier
+    risk_reviewer: idempotency-adversary
+    status: done
+  task-002-retry-queue:
+    primary: builder
+    reviewer: verifier
+    risk_reviewer: queue-reliability-reviewer
+    status: ready
+
+blockers:
+  - id: blocker-001
+    task: story-003-audit-log
+    reason: retention window for audit log not confirmed with compliance
+    owner: product_analyst
+    status: open
+    created_at: 2026-06-01T00:00:00Z
+
+status_log:
+  - at: 2026-06-01T00:00:00Z
+    by: manager
+    message: Project moved from planning to implementation.
+  - at: 2026-06-01T15:30:00Z
+    by: manager
+    message: task-001-retry-policy approved by verifier and moved to done.

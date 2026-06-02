@@ -1,0 +1,56 @@
+team:
+  manager:
+    role_file: .rite/team/roles/manager.md
+    owns:
+      - board.yaml
+      - status-report.md
+      - blockers.md
+
+  product_analyst:
+    role_file: .rite/team/roles/product-analyst.md
+    owns:
+      - brief.md
+      - prd.md
+      - spec.md
+      - open-questions.md
+
+  architect:
+    role_file: .rite/team/roles/architect.md
+    owns:
+      - architecture.md
+      - adr/
+      - risk-register.md
+
+  tech_lead:
+    role_file: .rite/team/roles/tech-lead.md
+    owns:
+      - stories/
+      - tasks.yaml
+      - implementation-plan.md
+
+  builder:
+    role_file: .rite/team/roles/builder.md
+    owns:
+      - code diff
+      - implementation-notes.md
+
+  verifier:
+    role_file: .rite/team/roles/verifier.md
+    owns:
+      - review.md
+      - qa-report.md
+      - evidence-card.md
+
+  adversarial_reviewer:
+    role_file: .rite/team/roles/adversarial-reviewer.md
+    owns:
+      - adversarial-review.md
+      - risk-challenges.md
+
+  scribe:
+    role_file: .rite/team/roles/scribe.md
+    owns:
+      - changelog.md
+      - pr-description.md
+      - decision-log updates
+      - retro.md

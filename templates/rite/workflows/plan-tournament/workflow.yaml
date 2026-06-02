@@ -1,0 +1,49 @@
+id: plan-tournament
+name: Plan Tournament
+type: planning
+mode: dynamic
+
+goal: >
+  Generate several independent implementation plans for one problem from
+  different angles (e.g. MVP-first, risk-first, user-first, simplest-thing), score
+  them with independent judges, and synthesize a single winning plan that grafts
+  the best ideas from the runners-up. Use when the solution space is wide and the
+  approach is not obvious.
+
+scope:
+  include:
+    - "the problem statement / spec to plan against"
+  exclude: []
+
+agents:
+  planner:
+    count: 3
+    role: each produces a full, independent plan from a distinct angle
+  judge:
+    count: 3
+    role: score every plan against the rubric, independently
+  reducer:
+    count: 1
+    role: tally scores, pick the winner, list best ideas from runners-up
+  verifier:
+    count: 1
+    role: stress-test the synthesized plan for feasibility and hidden risk
+
+budgets:
+  default_parallel_agents: 4
+  max_parallel_agents: 8
+  max_total_agents: 12
+  require_user_approval_before_edits: true
+
+outputs:
+  - tournament-plan.md
+  - raw-findings.jsonl
+  - reduced-findings.md
+  - verification-report.md
+  - evidence-card.md
+
+gates:
+  - at_least_three_distinct_plans
+  - each_plan_scored_by_independent_judges
+  - winner_justified_against_rubric
+  - synthesized_plan_feasible

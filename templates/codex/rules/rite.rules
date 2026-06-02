@@ -1,0 +1,27 @@
+# Rite command-execution rules for Codex (Starlark).
+#
+# NOTE: Codex `.codex/rules/*.rules` files are command-execution POLICY, not
+# instructions or personas. They decide which commands Codex may run outside the
+# sandbox. Rite's actual instructions live in AGENTS.md and in the skills under
+# .agents/skills/ — NOT here.
+#
+# This file is intentionally inert (rules commented out). It loads only when the
+# project .codex/ layer is trusted. Uncomment and adapt to pre-allow the safe,
+# read-only commands Rite rituals tend to run. Each prefix_rule takes a pattern
+# (list of command prefixes) and a decision: "allow" | "prompt" | "forbidden".
+
+# Allow read-only inspection Rite uses constantly:
+# prefix_rule(pattern = ["git", "status"], decision = "allow")
+# prefix_rule(pattern = ["git", "diff"], decision = "allow")
+# prefix_rule(pattern = ["git", "log"], decision = "allow")
+# prefix_rule(pattern = ["rite", "validate"], decision = "allow")
+# prefix_rule(pattern = ["rite", "doctor"], decision = "allow")
+
+# Prompt before tests/build (set to "allow" once you trust your test command):
+# prefix_rule(pattern = ["npm", "test"], decision = "prompt")
+# prefix_rule(pattern = ["pnpm", "test"], decision = "prompt")
+# prefix_rule(pattern = ["pytest"], decision = "prompt")
+
+# Never auto-run destructive commands:
+# prefix_rule(pattern = ["git", "push"], decision = "forbidden")
+# prefix_rule(pattern = ["rm", "-rf"], decision = "forbidden")

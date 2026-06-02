@@ -1,0 +1,21 @@
+# Project-scoped Codex config for a Rite-managed repository.
+#
+# Codex walks from the repo root down to your cwd and loads every
+# .codex/config.toml it finds — but ONLY when the project .codex/ layer is
+# trusted. Everything here is commented out and inert by default; uncomment
+# what you want and trust the project in Codex.
+#
+# IMPORTANT (verified against Codex): the [skills] enable/disable block is
+# honored ONLY from your global ~/.codex/config.toml and session flags — a
+# project-scoped [skills] block here is silently ignored. Do not rely on this
+# file to toggle Rite skills on/off; put that in ~/.codex/config.toml instead.
+
+# Codex reads AGENTS.md as the instruction surface. If you keep Rite guidance in
+# a differently-named file, register it as a fallback (root-level config only):
+# project_doc_fallback_filenames = ["AGENTS.md"]
+
+# Maximum bytes of concatenated AGENTS.md guidance Codex will ingest (default 32 KiB):
+# project_doc_max_bytes = 32768
+
+# Rite skills are installed under .agents/skills/ (the cross-tool Agent Skills
+# standard) and are discovered automatically — no config needed here.

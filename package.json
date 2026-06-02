@@ -1,0 +1,33 @@
+{
+  "name": "rite",
+  "version": "0.1.0",
+  "description": "Rite — an artifact-first AI development team manager for Claude Code and Codex. Rite before write.",
+  "license": "MIT",
+  "type": "commonjs",
+  "bin": {
+    "rite": "dist/cli.js"
+  },
+  "main": "dist/cli.js",
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "rite": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.0"
+  }
+}

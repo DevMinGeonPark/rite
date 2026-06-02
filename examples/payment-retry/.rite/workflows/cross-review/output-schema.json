@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cross Review Issue",
+  "description": "One review issue per line in raw-findings.jsonl.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "lens", "file", "line", "severity", "confidence", "description", "source_agent"],
+  "properties": {
+    "id": { "type": "string", "description": "e.g. CR-001" },
+    "lens": {
+      "type": "string",
+      "enum": ["correctness", "security", "performance", "tests", "api", "other"]
+    },
+    "file": { "type": "string" },
+    "line": { "type": "integer", "minimum": 1 },
+    "end_line": { "type": "integer", "minimum": 1 },
+    "severity": { "type": "string", "enum": ["blocking", "major", "minor", "nit"] },
+    "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+    "description": { "type": "string" },
+    "evidence": { "type": "string", "description": "Excerpt from the diff/code" },
+    "suggestion": { "type": "string" },
+    "source_agent": { "type": "string", "enum": ["reviewer", "adversary", "verifier"] },
+    "status": { "type": "string", "enum": ["raw", "confirmed", "contested", "rejected"] },
+    "agreed_by_lenses": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Other lenses that independently flagged this"
+    },
+    "disagreements": { "type": "array", "items": { "type": "string" } }
+  }
+}

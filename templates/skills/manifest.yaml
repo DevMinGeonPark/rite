@@ -1,0 +1,91 @@
+# Canonical Rite skill manifest.
+#
+# One entry per skill. The SKILL.md body in templates/skills/<name>/SKILL.md is
+# shared verbatim across Claude Code and Codex; `rite init` composes the
+# per-platform frontmatter from the fields below:
+#   - Claude Code: .claude/skills/<name>/SKILL.md  (+ legacy .claude/commands/<name>.md shim)
+#   - Codex:       .agents/skills/<name>/SKILL.md   (+ agents/openai.yaml when side_effecting)
+#
+# side_effecting: true  → Claude `disable-model-invocation: true` AND
+#                          Codex `policy.allow_implicit_invocation: false`
+#                          (the skill is user-triggered only, never auto-run).
+
+skills:
+  - name: rite
+    description: >-
+      Artifact-first AI development team manager for Claude Code and Codex. Use
+      when the user wants to plan, manage, implement, review, or document
+      software work as a disciplined team using the .rite/ runtime. Routes to
+      the rite-* rituals and enforces the rule: no evidence, no done.
+    argument_hint: "[subcommand] [args]"
+    side_effecting: false
+    allowed_tools: [Read, Glob, Grep]
+
+  - name: rite-kickoff
+    description: >-
+      Starts a new Rite project: classifies the work, assembles a team, and
+      writes the initial artifacts (project.yaml, mission, brief, board,
+      open-questions, risk-register). Use when the user wants to begin a new
+      feature, fix, or audit with Rite.
+    argument_hint: "\"<project intent>\""
+    side_effecting: true
+    allowed_tools: [Read, Write, Edit, Glob, Grep]
+
+  - name: rite-plan
+    description: >-
+      Produces BMAD-style planning artifacts (PRD, spec, architecture, ADRs,
+      stories, tasks, test plan, risk register) for the current Rite project
+      before any code is written. Use after kickoff to plan the work.
+    side_effecting: true
+    allowed_tools: [Read, Write, Edit, Glob, Grep]
+
+  - name: rite-board
+    description: >-
+      Shows the current Rite project status like an engineering standup
+      (phase, lanes, blockers, next action) and keeps board.yaml and the status
+      report consistent. Use to check where things stand.
+    side_effecting: false
+    allowed_tools: [Read, Glob, Grep, Write, Edit]
+
+  - name: rite-run
+    description: >-
+      Implements exactly one ready task from the board as the Builder, runs the
+      required tests or records a waiver, writes implementation notes, and moves
+      the task to review (never to done). Use to build the next task.
+    argument_hint: "[next | <task-id>]"
+    side_effecting: true
+    allowed_tools: [Read, Write, Edit, Glob, Grep, "Bash(git status *)", "Bash(git diff *)"]
+
+  - name: rite-review
+    description: >-
+      Verifies a task in review as the Verifier: inspects the diff, confirms
+      tests ran, maps acceptance criteria to evidence, writes an evidence card,
+      and approves or rejects. Use to review and gate completion. Reviewer must
+      not be the implementer.
+    side_effecting: true
+    allowed_tools: [Read, Write, Edit, Glob, Grep, "Bash(git status *)", "Bash(git diff *)"]
+
+  - name: rite-sync
+    description: >-
+      Synchronizes project memory as the Scribe: updates the changelog, PR
+      description, decision log, and status report from completed work and
+      evidence, keeping unresolved risks visible. Use before opening a PR.
+    side_effecting: true
+    allowed_tools: [Read, Write, Edit, Glob, Grep]
+
+  - name: rite-retro
+    description: >-
+      Captures actionable lessons and process improvements after a project or
+      milestone, writing retro.md and appending to the lessons log. Use when
+      work wraps up to make the next project smarter.
+    side_effecting: true
+    allowed_tools: [Read, Write, Edit, Glob, Grep]
+
+  - name: rite-wf
+    description: >-
+      Designs and runs a dynamic, parallel, multi-agent workflow for large,
+      cross-cutting, or high-risk work (audits, migrations, cross-reviews, plan
+      tournaments). Use only when work is too big or parallelizable for the
+      normal one-task loop. Requires approval before any write phase.
+    side_effecting: true
+    allowed_tools: [Read, Write, Edit, Glob, Grep]
