@@ -130,8 +130,14 @@ Or pick them from the `/skills` menu. Repo-wide instructions live in `AGENTS.md`
 | Sync | `rite-sync` | Scribe | changelog, PR desc, decisions |
 | Retro | `rite-retro` | Scribe | retro, lessons |
 
-Separation of duties is enforced: the Builder claims done, the Verifier approves
-evidence, the Manager moves the board, and no one approves their own work.
+Separation of duties: the Builder claims done, the Verifier approves evidence,
+the Manager moves the board, and no one approves their own work. `rite validate`
+mechanically enforces the *checkable* parts of this — a `done` task needs a
+complete evidence card whose reviewer is not the owner, owner ≠ reviewer, no
+open-blocker task in `ready`, and board/`tasks.yaml` status agreement. The rest
+(e.g. "code only after planning", diff budgets, real actor identity) are
+conventions the agent follows, not code-enforced guarantees — see
+`.rite/context/constitution.md` for the exact split.
 
 ---
 
@@ -201,10 +207,21 @@ rite doctor       # installed adapters, missing skills, active project
 rite export --tool claude|codex|both   # regenerate adapters from templates
 ```
 
-`rite validate` checks that `config.yaml` and `state.yaml` exist, every roster
-role file exists, the active project exists, board lanes are consistent, **every
-done task has an evidence card**, and **every task has an owner and a different
-reviewer**. It exits non-zero on any error, so you can wire it into CI.
+`rite validate` exits non-zero on any violation, so you can wire it into CI. It
+checks that `config.yaml`/`state.yaml`/roster role files exist, the active
+project exists, and board lanes are consistent — plus the evidence gate:
+
+- **every done task has a real evidence card** — matched by the card's `## Task`
+  value, requiring `Acceptance Criteria Mapping`, a PASS/waived `Test Result`,
+  and a `Reviewer Verdict` (forged or empty cards fail);
+- **no self-approval** — the card's reviewer ≠ the task owner;
+- **owner ≠ reviewer** on every task;
+- **no open-blocker task in `ready`**, and **board `done` ↔ `tasks.yaml` status
+  agree**.
+
+It does *not* run your tests or measure diffs — those stay conventions (see the
+Constitution). This keeps `validate` honest: it gates structure and evidence
+*form*, not the truth of the work.
 
 ---
 

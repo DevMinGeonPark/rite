@@ -40,11 +40,17 @@ interface State {
   current_project?: string | null;
   active_projects?: string[];
 }
+interface Blocker {
+  id?: string;
+  task?: string;
+  status?: string;
+}
 interface Board {
   project?: string;
   phase?: string;
   lanes?: Record<string, string[]>;
   owners?: Record<string, { primary?: string; reviewer?: string }>;
+  blockers?: Blocker[];
 }
 interface Task {
   id?: string;
@@ -55,6 +61,9 @@ interface Task {
 interface Tasks {
   tasks?: Task[];
 }
+
+/** Normalize a label for case/whitespace-insensitive comparison. */
+const norm = (s?: string | null) => (s ?? '').trim().toLowerCase();
 
 export function runValidate(opts: ValidateOptions): number {
   const start = path.resolve(opts.cwd ?? process.cwd());
@@ -171,25 +180,26 @@ function validateProject(report: Report, projDir: string, id: string) {
     }
     if (!t.owner) report.error(`[${id}] task "${t.id}" has no owner`);
     if (!t.reviewer) report.error(`[${id}] task "${t.id}" has no reviewer`);
-    if (t.owner && t.reviewer && t.owner === t.reviewer) {
+    if (t.owner && t.reviewer && norm(t.owner) === norm(t.reviewer)) {
       report.error(
         `[${id}] task "${t.id}" has the same owner and reviewer ("${t.owner}") — separation of duties requires they differ`
       );
     }
-    if (t.owner && t.reviewer && t.owner !== t.reviewer) report.pass();
+    if (t.owner && t.reviewer && norm(t.owner) !== norm(t.reviewer)) report.pass();
   }
 
   // board owners: reviewer != primary
   for (const [tid, o] of Object.entries(board?.owners ?? {})) {
-    if (o.primary && o.reviewer && o.primary === o.reviewer) {
+    if (o.primary && o.reviewer && norm(o.primary) === norm(o.reviewer)) {
       report.error(
         `[${id}] board owners for "${tid}": primary and reviewer are both "${o.primary}" — they must differ`
       );
     }
   }
 
-  // lane consistency: a task may be in only one lane
   const lanes = board?.lanes ?? {};
+
+  // lane consistency: a task may be in only one lane
   const seen = new Map<string, string>();
   for (const [lane, items] of Object.entries(lanes)) {
     for (const item of items ?? []) {
@@ -204,36 +214,163 @@ function validateProject(report: Report, projDir: string, id: string) {
   }
   if (Object.keys(lanes).length) report.pass();
 
-  // done tasks must have an evidence card
-  const evidence = collectEvidence(path.join(projDir, 'evidence'));
-  for (const doneItem of lanes['done'] ?? []) {
-    // stories never need evidence; only task-* items are gated
-    if (!doneItem.startsWith('task-')) continue;
-    if (!hasEvidenceFor(evidence, doneItem)) {
+  // fail-open guard: tasks exist but no board means board gates can't run
+  if (!board && tasks.length) {
+    report.warn(
+      `[${id}] tasks.yaml exists but board.yaml is missing/empty — board lane gates cannot run`
+    );
+  }
+
+  const doneLane = new Set(lanes['done'] ?? []);
+  const readyLane = new Set(lanes['ready'] ?? []);
+
+  // Which items must have a real evidence card?
+  //   - anything in the board "done" lane that is a known task, AND
+  //   - any task whose tasks.yaml status is "done" (covers board drift / fail-open)
+  // Using tasks.yaml membership (not a "task-" prefix) closes the story-* rename bypass.
+  const evidenceTargets = new Set<string>();
+  for (const item of doneLane) if (taskById.has(item)) evidenceTargets.add(item);
+  for (const t of tasks) if (t.id && norm(t.status) === 'done') evidenceTargets.add(t.id);
+
+  const cards = collectEvidence(path.join(projDir, 'evidence'));
+  for (const taskId of evidenceTargets) {
+    // Canonical match: a card whose "## Task" value IS this task id.
+    // (No more whole-file substring search — that allowed cross-contamination.)
+    const card = cards.find((c) => c.task && norm(c.task) === norm(taskId));
+    if (!card) {
       report.error(
-        `[${id}] done task "${doneItem}" has no evidence card in evidence/ — no evidence, no done`
+        `[${id}] done task "${taskId}" has no evidence card whose "## Task" section is "${taskId}" — no evidence, no done`
       );
-    } else {
-      report.pass();
+      continue;
+    }
+
+    let ok = true;
+    const missing: string[] = [];
+    if (!card.hasMapping) missing.push('Acceptance Criteria Mapping');
+    if (!card.hasTestResult) missing.push('Test Result');
+    if (!card.hasVerdict) missing.push('Reviewer Verdict');
+    if (missing.length) {
+      report.error(
+        `[${id}] evidence card "${card.file}" for "${taskId}" is missing required section(s): ${missing.join(', ')}`
+      );
+      ok = false;
+    }
+    // Test Result must read PASS (or an explicit waiver) — failing tests can't be done.
+    if (card.hasTestResult && !/\b(pass|waiv)/i.test(card.testResult ?? '')) {
+      report.error(
+        `[${id}] evidence card "${card.file}" for "${taskId}": Test Result is not PASS/waived ("${(card.testResult ?? '').split('\n')[0]}")`
+      );
+      ok = false;
+    }
+    // Separation of duties at the evidence layer: the card's reviewer must not be the task owner.
+    const t = taskById.get(taskId);
+    if (t?.owner && card.reviewer && norm(t.owner) === norm(card.reviewer)) {
+      report.error(
+        `[${id}] evidence card "${card.file}" for "${taskId}": reviewer ("${card.reviewer}") is the task owner — a builder cannot approve own work`
+      );
+      ok = false;
+    }
+    if (card.owner && card.reviewer && norm(card.owner) === norm(card.reviewer)) {
+      report.error(
+        `[${id}] evidence card "${card.file}" for "${taskId}": Owner and Reviewer are the same ("${card.owner}")`
+      );
+      ok = false;
+    }
+    if (ok) report.pass();
+  }
+
+  // board "done" lane ↔ tasks.yaml status must agree (board must match artifacts)
+  for (const item of doneLane) {
+    const t = taskById.get(item);
+    if (t && norm(t.status) && norm(t.status) !== 'done') {
+      report.error(
+        `[${id}] "${item}" is in the board "done" lane but tasks.yaml status is "${t.status}" — board must match artifacts`
+      );
+    }
+  }
+  for (const t of tasks) {
+    if (t.id && norm(t.status) === 'done' && !doneLane.has(t.id)) {
+      report.error(
+        `[${id}] task "${t.id}" has status "done" but is not in the board "done" lane — board must match artifacts`
+      );
+    }
+  }
+
+  // a blocked task (open blocker) cannot sit in the "ready" lane
+  for (const b of board?.blockers ?? []) {
+    if (norm(b.status) === 'open' && b.task && readyLane.has(b.task)) {
+      report.error(
+        `[${id}] task "${b.task}" is in "ready" but has an open blocker (${b.id ?? '?'}) — resolve the blocker first`
+      );
+    }
+  }
+
+  // referential integrity (warnings): board ↔ tasks.yaml
+  const allLaneItems = new Set<string>();
+  for (const arr of Object.values(lanes)) for (const i of arr ?? []) allLaneItems.add(i);
+  for (const t of tasks) {
+    if (t.id && !allLaneItems.has(t.id)) {
+      report.warn(`[${id}] task "${t.id}" is defined in tasks.yaml but not on the board`);
+    }
+  }
+  for (const item of allLaneItems) {
+    if (item.startsWith('task-') && !taskById.has(item)) {
+      report.warn(`[${id}] board item "${item}" is not defined in tasks.yaml`);
     }
   }
 }
 
-interface EvidenceFile {
+interface EvidenceCard {
   file: string;
-  content: string;
+  task: string | null;
+  owner: string | null;
+  reviewer: string | null;
+  hasMapping: boolean;
+  hasTestResult: boolean;
+  testResult: string | null;
+  hasVerdict: boolean;
 }
 
-function collectEvidence(evidenceDir: string): EvidenceFile[] {
+/** Return the body text under a `## <heading>` section, or null if absent. */
+function sectionBody(content: string, heading: string): string | null {
+  const lines = content.split('\n');
+  const target = `## ${heading}`.toLowerCase();
+  const idx = lines.findIndex((l) => l.trim().toLowerCase() === target);
+  if (idx === -1) return null;
+  const out: string[] = [];
+  for (let i = idx + 1; i < lines.length; i++) {
+    if (/^##\s/.test(lines[i])) break;
+    out.push(lines[i]);
+  }
+  return out.join('\n').trim();
+}
+
+function firstNonEmpty(s: string | null): string | null {
+  if (s == null) return null;
+  for (const line of s.split('\n')) {
+    const t = line.trim();
+    if (t) return t;
+  }
+  return null;
+}
+
+function parseEvidenceCard(file: string, content: string): EvidenceCard {
+  const testResult = sectionBody(content, 'Test Result');
+  return {
+    file,
+    task: firstNonEmpty(sectionBody(content, 'Task')),
+    owner: firstNonEmpty(sectionBody(content, 'Owner')),
+    reviewer: firstNonEmpty(sectionBody(content, 'Reviewer')),
+    hasMapping: sectionBody(content, 'Acceptance Criteria Mapping') !== null,
+    hasTestResult: testResult !== null,
+    testResult,
+    hasVerdict: sectionBody(content, 'Reviewer Verdict') !== null,
+  };
+}
+
+function collectEvidence(evidenceDir: string): EvidenceCard[] {
   if (!exists(evidenceDir)) return [];
   return walkFiles(evidenceDir)
     .filter((f) => f.endsWith('.md'))
-    .map((f) => ({ file: path.basename(f), content: readTextOrNull(f) ?? '' }));
-}
-
-/** A task is "covered" if its id appears in any evidence file (name or body). */
-function hasEvidenceFor(evidence: EvidenceFile[], taskId: string): boolean {
-  return evidence.some(
-    (e) => e.file.includes(taskId) || e.content.includes(taskId)
-  );
+    .map((f) => parseEvidenceCard(path.basename(f), readTextOrNull(f) ?? ''));
 }
