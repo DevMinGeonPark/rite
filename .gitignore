@@ -2,3 +2,12 @@ node_modules/
 dist/
 *.log
 .DS_Store
+
+# Rite loop run artifacts (reports/packets are runtime output)
+.rite/projects/*/loops/
+
+# Generated tool adapters for this repo's own dogfooding install
+# (.rite/ is kept — it holds the rite-loop project's planning + evidence).
+/.claude/
+/.agents/
+/.codex/

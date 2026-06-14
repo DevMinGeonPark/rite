@@ -1,0 +1,62 @@
+project: rite-loop
+phase: done
+
+lanes:
+  backlog: []
+  ready: []
+  in_progress: []
+  review: []
+  qa: []
+  done:
+    - task-001-run-tests
+    - task-002-diff-budget
+    - task-003-autonomy-field
+    - task-004-loop-skeleton
+    - task-005-runner-and-gate
+    - task-006-loop-report
+
+owners:
+  task-001-run-tests:
+    primary: builder
+    reviewer: verifier
+    status: done
+  task-002-diff-budget:
+    primary: builder
+    reviewer: verifier
+    status: done
+  task-003-autonomy-field:
+    primary: builder
+    reviewer: verifier
+    status: done
+  task-004-loop-skeleton:
+    primary: builder
+    reviewer: verifier
+    status: done
+  task-005-runner-and-gate:
+    primary: builder
+    reviewer: verifier
+    risk_reviewer: loop-safety-adversary
+    status: done
+  task-006-loop-report:
+    primary: builder
+    reviewer: verifier
+    status: done
+
+blockers: []
+
+status_log:
+  - at: 2026-06-11T00:00:00Z
+    by: manager
+    message: Kickoff — feature/high-risk, mode=strict. Loop-engineering research folded into ADR 002.
+  - at: 2026-06-11T01:00:00Z
+    by: manager
+    message: Planning complete — brakes-first sequencing; task-001/002 to ready.
+  - at: 2026-06-14T00:00:00Z
+    by: builder
+    message: >
+      Implemented all 6 tasks (exec/diff/select/packet/runner/loop + validate
+      --run-tests/--diff-budget + cli loop). 54/54 tests pass; live loop demo
+      promoted a task to done. Evidence cards written; verifier approved.
+  - at: 2026-06-14T00:30:00Z
+    by: manager
+    message: All tasks PROMOTED to done. rite-loop v0.2 implementation complete.

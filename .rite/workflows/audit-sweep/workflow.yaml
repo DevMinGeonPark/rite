@@ -1,0 +1,55 @@
+id: audit-sweep
+name: Repo-wide Audit Sweep
+type: audit
+mode: dynamic
+
+goal: >
+  Audit a scoped slice of the codebase for a class of defect (e.g. missing
+  authentication/authorization, tenant isolation, unsafe public access, injection,
+  unhandled errors), with every finding backed by file+line evidence and high-
+  severity findings cross-checked before they are reported.
+
+scope:
+  include:
+    - "src/**/*"
+  exclude:
+    - "**/*.test.*"
+    - "**/*.spec.*"
+    - "**/node_modules/**"
+
+# Phases: Plan → Fan-out → Cross-check → Reduce → Evidence
+agents:
+  mapper:
+    count: 2
+    role: enumerate in-scope files and classify each by risk/relevance
+  auditor:
+    count: 4
+    role: inspect assigned shards for the target defect class; emit raw findings
+  adversary:
+    count: 2
+    role: challenge auditor findings; hunt false negatives and false positives
+  reducer:
+    count: 1
+    role: deduplicate, rank by severity, merge — preserving disagreements
+  verifier:
+    count: 1
+    role: verify the top findings against actual code evidence
+
+budgets:
+  default_parallel_agents: 4
+  max_parallel_agents: 8
+  max_total_agents: 16
+  require_user_approval_before_edits: true
+
+outputs:
+  - audit-plan.md
+  - raw-findings.jsonl
+  - reduced-findings.md
+  - verification-report.md
+  - evidence-card.md
+
+gates:
+  - every_finding_has_file_and_line
+  - no_claim_without_code_evidence
+  - high_severity_findings_cross_checked
+  - remediation_plan_generated

@@ -1,0 +1,138 @@
+project: rite-loop
+
+# autonomy: all tasks are `assisted` — the loop cannot build itself unattended,
+# and these touch the gate code itself (judgment work per ADR 002 §4).
+
+tasks:
+  - id: task-001-run-tests
+    title: validate --run-tests executes the real test command
+    story: story-001-real-brakes
+    status: done
+    owner: builder
+    reviewer: verifier
+    autonomy: assisted
+    depends_on: []
+    files_expected:
+      - src/commands/validate.ts
+      - src/core/exec.ts
+      - src/__tests__/run-tests.test.ts
+      - templates/rite/config.yaml
+    acceptance:
+      - "config gains commands.test; validate --run-tests without it → clear error"
+      - "test command exit 0 → check passes and {command, exitCode} recorded in output"
+      - "test command exit != 0 → validate exits 1"
+      - "evidence card stating PASS while real command fails → validation error (hallucinated evidence)"
+      - "without --run-tests flag, behavior is unchanged (no surprise execution)"
+    required_evidence:
+      - unit_test_output
+      - acceptance_mapping
+
+  - id: task-002-diff-budget
+    title: Measure diff budgets for real (git numstat vs config)
+    story: story-001-real-brakes
+    status: done
+    owner: builder
+    reviewer: verifier
+    autonomy: assisted
+    depends_on: []
+    files_expected:
+      - src/core/diff.ts
+      - src/commands/validate.ts
+      - src/__tests__/diff-budget.test.ts
+    acceptance:
+      - "git diff --numstat <base> parsed into {files, lines} (pure parser, unit-tested)"
+      - "validate --diff-budget <base>: over budget without a waiver note → exit 1"
+      - "over budget WITH waiver text in the evidence card → warning, not error"
+      - "budgets read from config.yaml budgets.* (no more dead config keys)"
+    required_evidence:
+      - unit_test_output
+      - acceptance_mapping
+
+  - id: task-003-autonomy-field
+    title: autonomy classification on tasks (auto|assisted|human-only, fail-closed)
+    story: story-002-loop-engine
+    status: done
+    owner: builder
+    reviewer: verifier
+    autonomy: assisted
+    depends_on: []
+    files_expected:
+      - src/core/select.ts
+      - src/__tests__/select.test.ts
+      - templates/skills/rite-plan/SKILL.md
+      - templates/skills/rite-kickoff/SKILL.md
+    acceptance:
+      - "eligibility query: ready ∧ depends_on all done ∧ no open blocker ∧ autonomy==auto"
+      - "absent autonomy field → NOT eligible (fail-closed), covered by a test"
+      - "plan/kickoff skills instruct classifying risky work assisted/human-only"
+    required_evidence:
+      - unit_test_output
+      - acceptance_mapping
+
+  - id: task-004-loop-skeleton
+    title: rite loop skeleton — selection, packets, caps, dry-run (no runner yet)
+    story: story-002-loop-engine
+    status: done
+    owner: builder
+    reviewer: verifier
+    autonomy: assisted
+    depends_on:
+      - task-003-autonomy-field
+    files_expected:
+      - src/commands/loop.ts
+      - src/core/packet.ts
+      - src/cli.ts
+      - src/__tests__/loop-skeleton.test.ts
+    acceptance:
+      - "rite loop --dry-run prints selected task + packet path, spawns nothing"
+      - "no eligible tasks → exit 0, reason no-eligible-tasks, report still written"
+      - "--max-iterations caps the loop (override config downward only)"
+      - "packet contains constitution excerpt + spec + ONE task + lessons, from .rite/ files only"
+    required_evidence:
+      - unit_test_output
+      - acceptance_mapping
+
+  - id: task-005-runner-and-gate
+    title: Runner spawn + PROMOTE/HOLD gate wired to validate exit codes
+    story: story-002-loop-engine
+    status: done
+    owner: builder
+    reviewer: verifier
+    autonomy: assisted
+    depends_on:
+      - task-001-run-tests
+      - task-002-diff-budget
+      - task-004-loop-skeleton
+    files_expected:
+      - src/core/runner.ts
+      - src/commands/loop.ts
+      - src/__tests__/gate.test.ts
+    acceptance:
+      - "runner spawned from loop.runner config with {packet_path}; timeout kills it"
+      - "verdict PROMOTE only when validate --run-tests --diff-budget passes AND task sits in done lane with a complete evidence card"
+      - "runner claiming success in stdout but gate failing → FAIL (runner text is never judgment)"
+      - "consecutive failures >= cap → loop stops, exit code 2 (HOLD)"
+      - "runner crash/timeout counts as a failure; partial diff preserved (no auto-revert)"
+    required_evidence:
+      - unit_test_output
+      - acceptance_mapping
+
+  - id: task-006-loop-report
+    title: Structured run report + status_log + on_report hook
+    story: story-003-reporting
+    status: done
+    owner: builder
+    reviewer: verifier
+    autonomy: assisted
+    depends_on:
+      - task-005-runner-and-gate
+    files_expected:
+      - src/commands/loop.ts
+      - src/__tests__/report.test.ts
+    acceptance:
+      - "loops/<run-id>/report.md + report.json written for every run incl. dry/no-eligible"
+      - "report lists per-iteration task, verdict, test exit code, diff stats, stop reason"
+      - "status_log appended with run summary; loop.on_report hook fired with report path when set"
+    required_evidence:
+      - unit_test_output
+      - acceptance_mapping

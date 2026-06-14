@@ -4,6 +4,7 @@ import { runInit } from './commands/init';
 import { runValidate } from './commands/validate';
 import { runDoctor } from './commands/doctor';
 import { runExport } from './commands/export';
+import { runLoop } from './commands/loop';
 
 const TOOL_CHOICES = ['claude', 'codex', 'both'] as const;
 export type Tool = (typeof TOOL_CHOICES)[number];
@@ -40,8 +41,14 @@ program
   .command('validate')
   .description('Validate the .rite/ runtime and project artifacts for consistency')
   .option('--cwd <dir>', 'directory to validate from (default: current directory)')
+  .option('--run-tests', 'run the configured commands.test and gate on its real exit code', false)
+  .option('--diff-budget <base>', 'measure `git diff --numstat <base>` against budgets')
   .action((opts) => {
-    const code = runValidate({ cwd: opts.cwd });
+    const code = runValidate({
+      cwd: opts.cwd,
+      runTests: !!opts.runTests,
+      diffBudgetBase: opts.diffBudget,
+    });
     process.exit(code);
   });
 
@@ -62,6 +69,25 @@ program
   .action((opts) => {
     const tool = parseTool(opts.tool);
     const code = runExport({ tool, cwd: opts.cwd });
+    process.exit(code);
+  });
+
+program
+  .command('loop')
+  .description(
+    'Autonomously drain ready (autonomy:auto) tasks: select → run → verify → gate → report'
+  )
+  .option('--cwd <dir>', 'directory to run from (default: current directory)')
+  .option('--max-iterations <n>', 'cap iterations (can only lower the config cap)', (v) =>
+    parseInt(v, 10)
+  )
+  .option('--dry-run', 'select the next task and render its packet; spawn no runner', false)
+  .action((opts) => {
+    const code = runLoop({
+      cwd: opts.cwd,
+      maxIterations: opts.maxIterations,
+      dryRun: !!opts.dryRun,
+    });
     process.exit(code);
   });
 

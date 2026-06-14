@@ -1,0 +1,14 @@
+current_project: rite-loop
+current_phase: done
+current_task: null
+last_updated: 2026-06-14T00:30:00Z
+
+active_projects:
+  - rite-loop
+
+recent_runs:
+  - at: 2026-06-14T00:00:00Z
+    by: builder
+    result: all-6-tasks-done
+
+global_blockers: []

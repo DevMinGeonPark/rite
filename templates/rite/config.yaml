@@ -18,6 +18,23 @@ budgets:
   max_lines_changed_per_task: 500
   require_explanation_if_budget_exceeded: true
 
+# Ground-truth verification command. Required by `rite validate --run-tests`
+# and by `rite loop`. Set this to your real test command.
+commands:
+  test: "npm test"
+
+# Autonomous loop (rite loop). All stop conditions are enforced by the CLI
+# runtime, never by the agent. See .rite/projects/*/adr/002-*.md.
+loop:
+  enabled: true
+  # External headless runner. {packet_path} is substituted with the per-iteration
+  # run-packet file. Leave blank to force --dry-run only.
+  runner: ""
+  max_iterations_per_run: 6        # hard cap on iterations per `rite loop`
+  max_consecutive_failures: 2      # then stop with HOLD (exit 2)
+  iteration_timeout_minutes: 30    # kill a runner that exceeds this
+  on_report: ""                    # optional shell command run with the report path
+
 dynamic_workflows:
   enabled: true
   default_parallel_agents: 4

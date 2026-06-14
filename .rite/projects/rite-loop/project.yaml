@@ -1,0 +1,61 @@
+id: rite-loop
+title: Rite Loop — spec-guarded autonomous development loop
+created_at: 2026-06-11T00:00:00Z
+status: planning
+
+mode: strict
+risk_level: high
+project_type: feature
+
+summary: >
+  Add an autonomous loop engine to Rite: `rite loop` drains ready tasks through
+  build → verify → gate cycles without per-task human prompting. The human is
+  "on the loop" (async reports only); spec/evidence gates and runtime-enforced
+  stop conditions are the brakes that keep autonomy safe.
+
+team:
+  core:
+    - manager
+    - product_analyst
+    - architect
+    - tech_lead
+    - builder
+    - verifier
+    - adversarial_reviewer
+    - scribe
+  specialists:
+    - loop-safety-adversary      # runaway/no-progress/injection failure modes
+    - cost-budget-auditor        # token/iteration budget enforcement
+
+required_artifacts:
+  - brief.md
+  - prd.md
+  - spec.md
+  - architecture.md
+  - adr/
+  - tasks.yaml
+  - test-plan.md
+  - risk-register.md
+  - evidence/
+
+current_phase: planning
+current_task: null
+
+gates:
+  planning:
+    - brief_exists
+    - acceptance_criteria_testable
+    - non_goals_defined
+  design:
+    - architecture_exists
+    - risks_documented
+    - adr_created_if_needed
+    - adversarial_review_done        # strict mode
+  implementation:
+    - task_assigned
+    - tests_added_or_waived
+    - diff_budget_checked
+  review:
+    - evidence_exists
+    - verifier_approved
+    - acceptance_criteria_mapped

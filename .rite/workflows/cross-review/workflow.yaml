@@ -1,0 +1,48 @@
+id: cross-review
+name: Multi-Lens Cross Review
+type: review
+mode: dynamic
+
+goal: >
+  Review a change set (a diff, PR, or branch) from several independent lenses in
+  parallel — correctness, security, performance, tests, API/compat — then
+  cross-check and reduce to a single ranked, deduplicated review where every
+  issue carries file+line evidence and severity.
+
+scope:
+  include:
+    - "the diff / changed files under review"
+  exclude: []
+
+agents:
+  reviewer:
+    count: 4
+    role: one per lens (correctness, security, performance, tests/coverage)
+  adversary:
+    count: 1
+    role: challenge each reviewer's issues; find false positives and missed cases
+  reducer:
+    count: 1
+    role: deduplicate across lenses, rank by severity, preserve disagreements
+  verifier:
+    count: 1
+    role: confirm the blocking issues against the actual diff
+
+budgets:
+  default_parallel_agents: 4
+  max_parallel_agents: 8
+  max_total_agents: 12
+  require_user_approval_before_edits: true
+
+outputs:
+  - review-plan.md
+  - raw-findings.jsonl
+  - reduced-findings.md
+  - verification-report.md
+  - evidence-card.md
+
+gates:
+  - every_issue_has_file_and_line
+  - each_lens_covered
+  - blocking_issues_cross_checked
+  - verdict_is_explicit

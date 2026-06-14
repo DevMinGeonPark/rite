@@ -19,6 +19,10 @@ before any code is written.
 3. **Tech Lead** writes `stories/` and `tasks.yaml`. Each task: small,
    explicit `depends_on`, `files_expected`, `acceptance`, and
    `required_evidence`, with an `owner` and a **different** `reviewer`.
+   Set `autonomy:` per task — `auto` only for bounded, well-tested, reversible
+   work the loop may run unattended; `assisted` or `human-only` for anything
+   needing judgment (architecture, migrations, schema, security, scope calls).
+   A missing `autonomy` field is treated as not-auto (fail-closed) by `rite loop`.
 4. **Verifier** writes `test-plan.md`.
 5. **Adversarial Reviewer** challenges the plan and strengthens
    `risk-register.md` (preserve disagreements).

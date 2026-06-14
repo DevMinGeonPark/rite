@@ -3,9 +3,15 @@ import * as fs from 'fs';
 import { exists, readTextOrNull, walkFiles } from '../core/fs';
 import { readYaml } from '../core/yaml';
 import { findRiteDir, repoRootFor } from '../core/paths';
+import { runCommand } from '../core/exec';
+import { gitDiffStat, checkBudget } from '../core/diff';
 
 export interface ValidateOptions {
   cwd?: string;
+  /** Run the configured test command and gate on its real exit code. */
+  runTests?: boolean;
+  /** Measure `git diff --numstat <base>` against budgets (e.g. "HEAD"). */
+  diffBudgetBase?: string;
 }
 
 interface Issue {
@@ -39,6 +45,13 @@ interface Roster {
 interface State {
   current_project?: string | null;
   active_projects?: string[];
+}
+interface Config {
+  commands?: { test?: string };
+  budgets?: {
+    max_files_changed_per_task?: number;
+    max_lines_changed_per_task?: number;
+  };
 }
 interface Blocker {
   id?: string;
@@ -113,6 +126,51 @@ export function runValidate(opts: ValidateOptions): number {
     for (const entry of fs.readdirSync(projectsDir, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       validateProject(report, path.join(projectsDir, entry.name), entry.name);
+    }
+  }
+
+  // --- optional: run the real test command (ground-truth oracle) ---
+  if (opts.runTests) {
+    const cfg = readYaml<Config>(path.join(riteDir, 'config.yaml'));
+    const testCmd = cfg?.commands?.test;
+    if (!testCmd) {
+      report.error('--run-tests needs `commands.test` in .rite/config.yaml');
+    } else {
+      const res = runCommand(testCmd, { cwd: repo, timeoutMs: 20 * 60 * 1000 });
+      console.log(`  ⟳ ran "${testCmd}" → exit ${res.exitCode} (${res.durationMs}ms)`);
+      if (res.exitCode === 0) {
+        report.pass();
+      } else {
+        report.error(`configured test command failed (exit ${res.exitCode}): ${testCmd}`);
+        for (const file of donePassCards(riteDir)) {
+          report.error(
+            `evidence "${file}" states Test Result PASS but \`${testCmd}\` fails — hallucinated evidence`
+          );
+        }
+      }
+    }
+  }
+
+  // --- optional: measure diff budget against a base ref ---
+  if (opts.diffBudgetBase) {
+    const cfg = readYaml<Config>(path.join(riteDir, 'config.yaml'));
+    const maxFiles = cfg?.budgets?.max_files_changed_per_task ?? 8;
+    const maxLines = cfg?.budgets?.max_lines_changed_per_task ?? 500;
+    const stat = gitDiffStat(opts.diffBudgetBase, repo);
+    const chk = checkBudget(stat, maxFiles, maxLines);
+    console.log(
+      `  ⟳ diff vs ${opts.diffBudgetBase}: ${stat.files} files / ${stat.lines} lines (budget ${maxFiles}/${maxLines})`
+    );
+    if (!chk.over) {
+      report.pass();
+    } else if (hasWaiver(riteDir)) {
+      report.warn(
+        `diff budget exceeded (${stat.files}f/${stat.lines}l > ${maxFiles}/${maxLines}) but a waiver note is present`
+      );
+    } else {
+      report.error(
+        `diff budget exceeded: ${stat.files} files / ${stat.lines} lines > ${maxFiles}/${maxLines} (no waiver in evidence)`
+      );
     }
   }
 
@@ -373,4 +431,32 @@ function collectEvidence(evidenceDir: string): EvidenceCard[] {
   return walkFiles(evidenceDir)
     .filter((f) => f.endsWith('.md'))
     .map((f) => parseEvidenceCard(path.basename(f), readTextOrNull(f) ?? ''));
+}
+
+/** Every evidence card across all projects (for repo-wide run-tests checks). */
+function allEvidenceCards(riteDir: string): EvidenceCard[] {
+  const projectsDir = path.join(riteDir, 'projects');
+  if (!exists(projectsDir)) return [];
+  const out: EvidenceCard[] = [];
+  for (const entry of fs.readdirSync(projectsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    out.push(...collectEvidence(path.join(projectsDir, entry.name, 'evidence')));
+  }
+  return out;
+}
+
+/** Cards whose Test Result claims PASS — used to flag hallucinated evidence. */
+function donePassCards(riteDir: string): string[] {
+  return allEvidenceCards(riteDir)
+    .filter((c) => c.testResult && /\bpass\b/i.test(c.testResult))
+    .map((c) => c.file);
+}
+
+/** True if any evidence card mentions a waiver (relaxes the diff-budget gate). */
+function hasWaiver(riteDir: string): boolean {
+  const projectsDir = path.join(riteDir, 'projects');
+  if (!exists(projectsDir)) return false;
+  return walkFiles(projectsDir)
+    .filter((f) => f.includes(`${path.sep}evidence${path.sep}`) && f.endsWith('.md'))
+    .some((f) => /waiv/i.test(readTextOrNull(f) ?? ''));
 }

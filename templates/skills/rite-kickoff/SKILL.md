@@ -40,6 +40,11 @@ the brief to the **Product Analyst**.
 - **strict**: standard + mandatory design-review + adversarial review.
 - **dynamic**: large/cross-cutting/audit → see `rite-wf`.
 
+When work may later be drained by `rite loop`, classify each task's `autonomy`
+during planning: `auto` only for bounded/reversible/well-tested tasks; default
+risky or judgment work to `assisted`/`human-only` (the loop is fail-closed and
+will skip anything not explicitly `auto`).
+
 ## Do not
 - Implement code.
 - Invent unresolved requirements (capture them in `open-questions.md` instead).

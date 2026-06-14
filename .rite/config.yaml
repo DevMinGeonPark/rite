@@ -1,0 +1,36 @@
+version: 0.1.0
+name: Rite
+mode: standard
+
+tools:
+  claude: true
+  codex: true
+
+defaults:
+  project_mode: standard
+  require_evidence: true
+  require_review_before_done: true
+  builder_cannot_approve_own_work: true
+  manager_updates_board: true
+
+budgets:
+  max_files_changed_per_task: 8
+  max_lines_changed_per_task: 500
+  require_explanation_if_budget_exceeded: true
+
+commands:
+  test: "npm test"
+
+loop:
+  enabled: true
+  runner: ""
+  max_iterations_per_run: 6
+  max_consecutive_failures: 2
+  iteration_timeout_minutes: 30
+  on_report: ""
+
+dynamic_workflows:
+  enabled: true
+  default_parallel_agents: 4
+  max_parallel_agents: 8
+  require_approval_before_write: true

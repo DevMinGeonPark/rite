@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Audit Sweep Finding",
+  "description": "One finding emitted by an auditor or adversary, one JSON object per line in raw-findings.jsonl.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "defect", "file", "line", "severity", "confidence", "rationale", "source_agent"],
+  "properties": {
+    "id": { "type": "string", "description": "Stable id, e.g. AUD-001" },
+    "defect": { "type": "string", "description": "Which defect class this is an instance of" },
+    "file": { "type": "string", "description": "Repo-relative path" },
+    "line": { "type": "integer", "minimum": 1 },
+    "end_line": { "type": "integer", "minimum": 1 },
+    "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+    "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+    "rationale": { "type": "string", "description": "Why this is a defect" },
+    "evidence": { "type": "string", "description": "Code excerpt proving it" },
+    "remediation": { "type": "string", "description": "Suggested fix" },
+    "source_agent": { "type": "string", "enum": ["auditor", "adversary", "verifier"] },
+    "status": { "type": "string", "enum": ["raw", "confirmed", "contested", "rejected"] },
+    "disagreements": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Opposing positions to preserve"
+    }
+  }
+}

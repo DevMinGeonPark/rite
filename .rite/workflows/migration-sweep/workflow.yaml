@@ -1,0 +1,53 @@
+id: migration-sweep
+name: Migration / Codemod Sweep
+type: migration
+mode: dynamic
+
+goal: >
+  Apply a single, well-defined transformation across many files (e.g. API
+  rename, import path change, framework upgrade, deprecation removal) with each
+  shard changed in isolation, verified independently, and no shard merged
+  without passing its checks.
+
+scope:
+  include:
+    - "src/**/*"
+  exclude:
+    - "**/node_modules/**"
+    - "**/dist/**"
+
+agents:
+  mapper:
+    count: 2
+    role: find all call sites / occurrences that need transforming; group into shards
+  migrator:
+    count: 4
+    role: apply the transformation to one shard, in isolation, with tests
+  adversary:
+    count: 1
+    role: hunt missed occurrences and behavior changes the transform shouldn't make
+  reducer:
+    count: 1
+    role: integrate shard results, resolve conflicts, report coverage
+  verifier:
+    count: 1
+    role: confirm the transform is complete and behavior is preserved
+
+budgets:
+  default_parallel_agents: 4
+  max_parallel_agents: 8
+  max_total_agents: 16
+  require_user_approval_before_edits: true
+
+outputs:
+  - migration-plan.md
+  - raw-findings.jsonl
+  - reduced-findings.md
+  - verification-report.md
+  - evidence-card.md
+
+gates:
+  - all_occurrences_found_or_explained
+  - each_shard_compiles_and_tests_pass
+  - behavior_preserved_unless_intended
+  - rollback_plan_documented
