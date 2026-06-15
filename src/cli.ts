@@ -23,7 +23,7 @@ program
   .description(
     'Rite — an artifact-first AI development team manager for Claude Code and Codex.\nRite before write.'
   )
-  .version('0.1.0');
+  .version('0.2.0');
 
 program
   .command('init')
