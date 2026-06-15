@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install
+        run: npm install
+
+      - name: Build + unit/integration tests (54)
+        run: npm test
+
+      # Rite gates its own runtime: structure + evidence + no-evidence-no-done.
+      - name: Rite validate (self-check)
+        run: node dist/cli.js validate
+
+      # Run the repo's own tests as a ground-truth gate (dogfood: validate --run-tests).
+      - name: Rite validate --run-tests
+        run: node dist/cli.js validate --run-tests
