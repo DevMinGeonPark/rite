@@ -233,6 +233,15 @@ Constitution). This keeps `validate` honest: it gates structure and evidence
 | `rite validate [--cwd <dir>]` | validate runtime + projects |
 | `rite doctor [--cwd <dir>]` | report adapters, skills, active project |
 | `rite export --tool <…> [--cwd <dir>]` | regenerate tool adapters from templates |
+| `rite validate --run-tests [--diff-budget <base>]` | run real tests + measure diff as gates |
+| `rite loop [--dry-run] [--max-iterations <n>]` | autonomously drain ready (autonomy:auto) tasks |
+
+## Architecture & development
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the internals: runtime
+layout, per-platform skill rendering, the `validate` gate (enforced vs.
+convention), the autonomous loop (`rite loop`), the code map, testing, and how
+to extend Rite.
 
 ## License
 
