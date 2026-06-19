@@ -201,6 +201,8 @@ rite export --tool claude|codex|both   # 템플릿에서 어댑터 재생성
 
 내부 구조는 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)를 보세요. 런타임 레이아웃, 플랫폼별 스킬 렌더링, `validate` 게이트(강제 대 관례), 자율 루프(`rite loop`), 코드 맵, 테스트, 그리고 Rite를 확장하는 방법을 다룹니다.
 
+Rite를 객관적으로 어떻게 평가하는지는 [`docs/EVALUATION.md`](docs/EVALUATION.md)를 보세요. evidence 게이트를 이진 분류기로 보고, Wilson 신뢰구간 + GuardBench 지표를 붙인 FAR/FRR ablation, 정직한 한계, 그리고 LLM A/B로 가는 로드맵을 다룹니다. 재현: `node dist/eval/far-ablation.js`.
+
 ## 라이선스
 
 MIT.
