@@ -245,6 +245,11 @@ layout, per-platform skill rendering, the `validate` gate (enforced vs.
 convention), the autonomous loop (`rite loop`), the code map, testing, and how
 to extend Rite.
 
+See [`docs/EVALUATION.md`](docs/EVALUATION.md) for how Rite is evaluated
+objectively: the evidence gate as a binary classifier, an FAR/FRR ablation with
+Wilson confidence intervals + GuardBench metrics, honest limitations, and the
+roadmap to an LLM A/B. Reproduce with `node dist/eval/far-ablation.js`.
+
 ## License
 
 MIT.
